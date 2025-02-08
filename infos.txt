@@ -1,0 +1,16 @@
+FI-2010: marché finlandais.
+--> tick by tick
+
+les actions sont: Fortum (FORTUM), Neste (NESTE), Outokumpu (OUTOKUMPU), Sampo (SAMPO) et Stora Enso (STORA)
+
+--> profondeur: niveaux 10
+
+40 colonnes par fichier:
+--> 1 à 10: Prix des niveaux bid
+--> 11 à 20: volumes des 10 premiers niveaux bid.
+--> 21 à 30: prix des 10 niveaux ask
+--> 31 à 40: volumes des 10 premiers ask.
+--> time
+--> midprice
+--> spread
+
