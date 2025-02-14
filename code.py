@@ -9,6 +9,8 @@ import sys
 import numpy as np
 import torch
 import os
+import pandas as pd
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
@@ -187,4 +189,35 @@ def __vis_sample_lob__():
     plt.colorbar()
     plt.show()
     
-__vis_sample_lob__()
+# __vis_sample_lob__()
+
+
+auction = False              # Set to True if you want the "Auction" data
+normalization = "DecPre"     # Choose between 'Zscore', 'MinMax', or 'DecPre'
+stock_idx = [0, 1, 2, 3, 4]  # Stocks to include (0 to 4)
+days = [1, 2]    # Days 1 to 10
+T = 100                      # Time window length
+k = 2                        # Prediction horizon (0-4)
+lighten = True     
+
+dataset = Dataset_fi2010(auction, normalization, stock_idx, days, T, k, lighten)
+
+x_np = dataset.x.numpy().squeeze(1)  # Remove the extra dimension (1, T, Features)
+y_np = dataset.y.numpy()
+
+num_samples, time_steps, num_features = x_np.shape  # (samples, T, features)
+
+# Reshape X to a 2D format for DataFrame
+x_reshaped = x_np.reshape(num_samples, time_steps * num_features)
+
+# Generate column names for all timesteps and features
+column_names = [f"feature_{i}_t{t}" for t in range(time_steps) for i in range(num_features)]
+
+# Create DataFrame
+df_x = pd.DataFrame(x_reshaped, columns=column_names)
+df_y = pd.DataFrame(y_np, columns=["label"])
+
+# Concatenate features and labels
+df = pd.concat([df_x, df_y], axis=1)
+
+
