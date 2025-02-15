@@ -22,7 +22,6 @@ import json
 # files = os.listdir(folder_path)
 
 file_path = r"D:/Bureau/FI-2010/Auction/1.Auction_Zscore/Auction_Zscore_Training/Train_Dst_Auction_ZScore_CF_1.txt"
-
 with open(file_path, "r", encoding="utf-8", errors="replace") as f:
     content = f.read().strip()  # Read as a single line
 
@@ -34,12 +33,12 @@ columns_per_row = 144  # Adjust if needed
 rows = [values[i:i + columns_per_row] for i in range(0, len(values), columns_per_row)]
 
 # Save the fixed version
-fixed_file = "fixed_dataset.txt"
-with open(fixed_file, "w", encoding="utf-8") as f:
-    for row in rows:
-        f.write(" ".join(row) + "\n")
+# fixed_file = "fixed_dataset.txt"
+# with open(fixed_file, "w", encoding="utf-8") as f:
+#     for row in rows:
+#         f.write(" ".join(row) + "\n")
 
-print(f"Fixed dataset saved as: {fixed_file}")
+# print(f"Fixed dataset saved as: {fixed_file}")
 
 import pandas as pd
 df = pd.read_csv(r'fixed_dataset.txt', delim_whitespace=True, header=None)
