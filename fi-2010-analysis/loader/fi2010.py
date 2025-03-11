@@ -8,6 +8,8 @@ Created on Mon Mar 10 11:27:41 2025
 import os
 import numpy as np
 import torch
+from main import *
+from loader.features import *
 
 
 
@@ -83,23 +85,19 @@ raw_df = __get_raw__(False, "Zscore", 9)
 
 stock_df = __extract_stock__(raw_df, 0)
 
-def __split_x_y__(data, lighten):
+def __split_x_y__(data, level):
     """
     Extract lob data and annotated label from fi-2010 data
     Parameters
     ----------
     data: Numpy Array
     """
-    if lighten:
-        data_length = 20
-        # data_length = 144
-    else:
-        data_length = 40
-
-    x = data[:data_length, :].T
+    structure = get_features_structure(level)
+    x = data[[int(key) for key in structure.keys()], :].T
     y = data[-5:, :].T
     return x, y
 
+x, y = __split_x_y__(stock_df, 2)
 
 def __data_processing__(x, y, T, k):
     """
@@ -125,7 +123,7 @@ def __data_processing__(x, y, T, k):
 
 
 class Dataset_fi2010:
-    def __init__(self, auction, normalization, stock_idx, days, T, k, lighten):
+    def __init__(self, auction, normalization, stock_idx, days, T, k, level):
         """ Initialization """
         self.auction = auction
         self.normalization = normalization
@@ -133,7 +131,7 @@ class Dataset_fi2010:
         self.stock_idx = stock_idx
         self.T = T
         self.k = k
-        self.lighten = lighten
+        self.level = level
 
         x, y = self.__init_dataset__()
         x = torch.from_numpy(x)
@@ -149,7 +147,7 @@ class Dataset_fi2010:
             for day in self.days:
                 day_data = __extract_stock__(
                     __get_raw__(auction=self.auction, normalization=self.normalization, day=day), stock)
-                x, y = __split_x_y__(day_data, self.lighten)
+                x, y = __split_x_y__(day_data, self.level)
                 x_day, y_day = __data_processing__(x, y, self.T, self.k)
 
                 if len(x_cat) == 0 and len(y_cat) == 0:

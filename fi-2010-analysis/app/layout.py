@@ -1,48 +1,5 @@
-import dash_bootstrap_components as dbc
+
 from dash import dcc, html
-
-
-basic_features = [
-    f"{feature}_{i}"
-    for i in range(1, 11)
-    for feature in ["P_Ask", "V_Ask", "P_Bid", "V_Bid"]
-]
-
-time_insensitive_features = [
-        f"{feature}_{i}"
-        for i in range(1,11)
-        for feature in ["Spread", "MidPrice"]
-    ] + [
-        "P_Diff_Ask", "P_Diff_Bid"
-    ] + [
-        f"{feature}_{i}"
-        for i in range(1,10)
-        for feature in ["P_AbsDiffRel_Ask", "P_AbsDiffRel_Bid"]
-    ] + [
-        "P_Mean_Ask",
-        "P_Mean_Bid",
-        "V_Mean_Ask",
-        "V_Mean_Bid"
-    ] + [
-        "P_AccDiff",
-        "V_AccDiff"
-    ]
-
-time_sensitive_features = [
-        f"{feature}_{i}"
-        for i in range(1,11)
-        for feature in ["P_Deriv_Ask", "P_Deriv_Bid", "V_Deriv_Ask", "V_Deriv_Bid"]
-    ] + [
-        f"IntensityAverage_{i}"
-        for i in range(1,7)
-    ] + [
-        f"IntensityRelComparison_{i}"
-        for i in range(1,7)
-    ] + [
-        f"LimitActivityAcceleration_{i}"
-        for i in range(1,7)
-    ]
-
 
 
 parameters = html.Div([
@@ -58,28 +15,65 @@ parameters = html.Div([
         html.Label("Stocks:"),
         dcc.Dropdown(
             id="stock-selector",
-            options=[{'label': f'Stock {i}', 'value': i} for i in range(1, 10)],
+            options=[{'label': f'Stock {i}', 'value': i} for i in range(1, 5)],
             multi=True,
             placeholder="Select stock",
         ),
         html.Label("Level:"),
         dcc.Dropdown(
             id='level-selector',
-        )
-        # dbc.Button("Open Modal", id="open-modal", n_clicks=0, className="mb-3"),
-    #     dbc.Modal([
-    #         dbc.ModalHeader("Select Features"),
-    #         dbc.ModalBody([
-    #             dcc.Dropdown(
-    #                 id='feature-selector',
-    #                 options=[{'label': features[i], 'value': f'feature_{i}'} for i in range(1, 144)],
-    #                 multi=True,
-    #                 placeholder='Select features...'
-    #             ),
-    #         ]),
-    #         dbc.ModalFooter(
-    #             dbc.Button("Close", id="close-modal", className="ml-auto", n_clicks=0)
-    #         ),
-    # ], id="modal", is_open=False),
+            options=[{'label': f'Level {i}', 'value': i} for i in range(1, 11)],
+        ),
+        html.Hr(),
+        html.Label("Horizon (T):"),
+        dcc.Input(
+            id="T",
+            type="number",
+            value=10,
+            step=1,
+            style={'marginBottom': '10px', 'width': '100%'},
+        ),
+        html.Label("Prediction (k):"),
+        dcc.Dropdown(
+            id="prediction-selector",
+            options=[
+                {'label': 1, 'value': 0},
+                {'label': 2, 'value': 1},
+                {'label': 3, 'value': 2},
+                {'label': 4, 'value': 3},
+                {'label': 10, 'value': 4},
+            ]
+        ),
     ])
-])
+], style={
+    "position": "fixed",
+    "top": "0px",
+    "left": "0px",
+    "width": "8vw",
+    "height": "100vh",
+    "overflow-y": "auto",
+    "backgroundColor": "#f8f9fa",
+    "padding": "10px",
+    "borderRight": "2px solid #ccc"
+})
+
+results = html.Div([
+    html.H3("Price Evolution:"),
+    dcc.Graph(id='price-graph'),
+    html.Hr(),
+    html.H3("Volume Evolution:"),
+    dcc.Graph(id='volume-graph'),
+    html.H3("Spread Evolution:"),
+    dcc.Graph(id='spread-graph'),
+    html.H3("MidPrice Evolution:"),
+    dcc.Graph(id='midprice-graph'),
+], style={
+    "marginLeft": "8vw",
+    "width": "90vw"
+})
+
+layout = html.Div([
+    html.Div(
+    [parameters, results],
+    style={"display": "flex", "flexDirection": "row", "width": "100%"},
+)])
