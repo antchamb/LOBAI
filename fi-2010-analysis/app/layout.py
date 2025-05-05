@@ -1,6 +1,6 @@
 
 from dash import dcc, html
-
+import dash_bootstrap_components as dbc
 
 parameters = html.Div([
     html.H3("Adjust Parameters:"),
@@ -44,6 +44,7 @@ parameters = html.Div([
                 {'label': 10, 'value': 4},
             ]
         ),
+        dbc.Button(id='load-button')
     ])
 ], style={
     "position": "fixed",
@@ -67,6 +68,7 @@ results = html.Div([
     dcc.Graph(id='spread-graph'),
     html.H3("MidPrice Evolution:"),
     dcc.Graph(id='midprice-graph'),
+    dcc.Store(id='x', storage_type='session'),
 ], style={
     "marginLeft": "8vw",
     "width": "90vw"
