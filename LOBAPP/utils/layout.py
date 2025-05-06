@@ -1,7 +1,6 @@
 
 from dash import html, dcc
 
-
 parameters = html.Div([
     html.H3('Adjust Parameters: '),
     html.Div([
@@ -25,7 +24,7 @@ parameters = html.Div([
             min=0,
             max=10,
             step=1,
-            value=[0],
+            value=[0, 1],
             allowCross=False,
             tooltip={'placement': 'bottom', 'always_visible': True}
         ),
@@ -50,6 +49,20 @@ parameters = html.Div([
         'marginTop': '10px',
         'width': '100%'
     }),
+
+    html.Div([
+        html.Label('Horizon'),
+        dcc.Dropdown(
+            id='k',
+            options=[
+                {'label': '1', 'value': 1},
+                {'label': '2', 'value': 2},
+                {'label': '3', 'value': 3},
+                {'label': '5', 'value': 5},
+                {'label': '10', 'value': 10},
+            ]
+        )
+    ])
 ], style={
     'position': 'fixed',
     'top': '0px',
@@ -62,4 +75,16 @@ parameters = html.Div([
     'borderRight': '2px solid #ccc'
 })
 
-layout = parameters
+
+results = html.Div([
+    html.Label('Label Analysis:'),
+    dcc.Graph(id='label-hist')
+], style={
+    "marginLeft": "10vw",
+    "width": "90vw"
+})
+
+layout = html.Div(
+    [parameters, results],
+    style={"display": "flex", "flexDirection": "row", "width": "100%"},
+)
