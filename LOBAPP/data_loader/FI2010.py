@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+from lean.models import file_path
 
 
 def __get_raw__(auction, normalization, day):
@@ -41,10 +42,12 @@ def __get_raw__(auction, normalization, day):
     else:
         path3 = tmp_path_2 + '_Testing'
         day = day - 1
+        print(str(day))
         filename = f"Test_Dst_{path1}_{normalization}_CF_{str(day)}.txt"
 
-    file_path = os.path.join(root_path, path1, path2, path3, filename)
 
+    file_path = os.path.join(root_path, path1, path2, path3, filename)
+    print(file_path)
     try:
         fi2010_dataset = np.loadtxt(file_path)
     except FileNotFoundError:
@@ -199,4 +202,4 @@ def __vis_sample_lob__():
     plt.colorbar()
     plt.show()
 
-# fi2010 = Dataset_fi2010(auction=False, normalization="Zscore", stock_idx=[0, 1, 2, 3, 4], days=[1], T = 10, k=2, lighten=True)
+fi2010 = Dataset_fi2010(auction=False, normalization="Zscore", stock_idx=[0, 1, 2, 3, 4], days=[1], T = 10, k=2, lighten=True)

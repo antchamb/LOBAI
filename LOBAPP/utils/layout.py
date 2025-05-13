@@ -21,10 +21,10 @@ parameters = html.Div([
         html.Label('day selection'),
         dcc.RangeSlider(
             id='day-slider',
-            min=0,
+            min=1,
             max=10,
             step=1,
-            value=[0, 1],
+            value=[1, 2],
             allowCross=False,
             tooltip={'placement': 'bottom', 'always_visible': True}
         ),
@@ -78,7 +78,14 @@ parameters = html.Div([
 
 results = html.Div([
     html.Label('Label Analysis:'),
-    dcc.Graph(id='label-hist')
+    dcc.Graph(id='label-hist'),
+    dcc.Upload(
+        id='upload-data',
+        children=html.Button('Upload LOB Data'),
+        multiple=False
+    ),
+    html.Div(id='prediction-output'),
+    dcc.Graph(id='decision-graph')
 ], style={
     "marginLeft": "10vw",
     "width": "90vw"
