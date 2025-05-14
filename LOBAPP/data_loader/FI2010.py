@@ -42,12 +42,12 @@ def __get_raw__(auction, normalization, day):
     else:
         path3 = tmp_path_2 + '_Testing'
         day = day - 1
-        print(str(day))
+
         filename = f"Test_Dst_{path1}_{normalization}_CF_{str(day)}.txt"
 
 
     file_path = os.path.join(root_path, path1, path2, path3, filename)
-    print(file_path)
+
     try:
         fi2010_dataset = np.loadtxt(file_path)
     except FileNotFoundError:
@@ -152,6 +152,8 @@ class Dataset_fi2010:
                     x_cat = np.concatenate((x_cat, x_day), axis=0)
                     y_cat = np.concatenate((y_cat, y_day), axis=0)
 
+        x_cat = x_cat.astype(np.float32)
+        y_cat = y_cat.astype(np.int64)
         return x_cat, y_cat
 
     def __len__(self):

@@ -1,0 +1,1 @@
+LOBAPP/weights/* filter=lfs diff=lfs merge=lfs -text
