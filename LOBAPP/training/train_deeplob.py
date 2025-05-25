@@ -76,6 +76,7 @@ for epoch in tqdm(range(1, EPOCHS + 1)):
         total   += yb.size(0)
     print(f"epoch {epoch:02d} | loss {running/total:.4f}")
 
+CKPT_FILE    = CKPT_DIR / f"test.pt"
 # ------------ SAVE ------------
 torch.save(model.state_dict(), CKPT_FILE)
 print("✔ checkpoint saved →", CKPT_FILE)

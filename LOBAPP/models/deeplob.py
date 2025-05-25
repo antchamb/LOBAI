@@ -79,24 +79,93 @@ class Deeplob(nn.Module):
         self.lstm = nn.LSTM(input_size=192, hidden_size=64, num_layers=1, batch_first=True)
         self.fc1 = nn.Linear(64, 3)
 
+    # def forward(self, x):
+    #     batch_size = x.size(0)
+    #     h0 = torch.zeros(1, batch_size, 64, device=x.device)
+    #     c0 = torch.zeros(1, batch_size, 64, device=x.device)
+    #
+    #     x = self.conv1(x)
+    #     x = self.conv2(x)
+    #     x = self.conv3(x)
+    #
+    #     x_inp1 = self.inp1(x)
+    #     x_inp2 = self.inp2(x)
+    #     x_inp3 = self.inp3(x)
+    #
+    #     x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
+    #
+    #     x = x.permute(0, 2, 1, 3)
+    #     x = torch.reshape(x, (-1, x.shape[1], x.shape[2]))
+    #
+    #     x, _ = self.lstm(x, (h0, c0))
+    #     x = x[:, -1, :]
+    #     x = self.fc1(x)
+    #     forecast_y = torch.softmax(x, dim=1)
+    #
+    #     return forecast_y
+    # def forward(self, x):
+    #     batch_size = x.size(0)
+    #     h0 = torch.zeros(1, batch_size, 64, device=x.device)
+    #     c0 = torch.zeros(1, batch_size, 64, device=x.device)
+    #
+    #     x = self.conv1(x)
+    #     x = self.conv2(x)
+    #     x = self.conv3(x)
+    #
+    #     x_inp1 = self.inp1(x)
+    #     x_inp2 = self.inp2(x)
+    #     x_inp3 = self.inp3(x)
+    #
+    #     x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
+    #
+    #     x = x.permute(0, 2, 1, 3)
+    #     x = torch.reshape(x, (batch_size, x.shape[1], -1))
+    #
+    #     x, _ = self.lstm(x, (h0, c0))
+    #     x = x[:, -1, :]
+    #     x = self.fc1(x)
+    #     forecast_y = torch.softmax(x, dim=1)
+    #
+    #     return forecast_y
+
     def forward(self, x):
-        h0 = torch.zeros(1, x.size(0), 64).to(self.device)
-        c0 = torch.zeros(1, x.size(0), 64).to(self.device)
+        print(f"Input shape: {x.shape}")  # Initial input shape
+
+        batch_size = x.size(0)
+        h0 = torch.zeros(1, batch_size, 64, device=x.device)
+        c0 = torch.zeros(1, batch_size, 64, device=x.device)
 
         x = self.conv1(x)
+        print(f"After conv1: {x.shape}")
+
         x = self.conv2(x)
+        print(f"After conv2: {x.shape}")
+
         x = self.conv3(x)
+        print(f"After conv3: {x.shape}")
 
         x_inp1 = self.inp1(x)
         x_inp2 = self.inp2(x)
         x_inp3 = self.inp3(x)
+        print(f"After inp1: {x_inp1.shape}, inp2: {x_inp2.shape}, inp3: {x_inp3.shape}")
 
         x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
+        print(f"After concatenation: {x.shape}")
 
-        x = x.permute(0, 2, 1, 3)
-        x = torch.reshape(x, (-1, x.shape[1], x.shape[2]))
+        x = x.permute(0, 2, 1, 3)  # (B, T, C, D)
+        print(f"After permute: {x.shape}")
+
+        x = x.mean(dim=-1, keepdim=False)
+
+        x = torch.reshape(x, (batch_size, x.shape[1], -1))  # (B, T, C*D)
+        print(f"After reshape: {x.shape}")
+
+        if x.shape[-1] != 192:  # Debugging check
+            raise ValueError(f"Expected input size 192, but got {x.shape[-1]}")
 
         x, _ = self.lstm(x, (h0, c0))
+        print(f"After LSTM: {x.shape}")
+
         x = x[:, -1, :]
         x = self.fc1(x)
         forecast_y = torch.softmax(x, dim=1)
