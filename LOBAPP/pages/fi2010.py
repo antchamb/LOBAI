@@ -3,8 +3,15 @@ from dash import html, dcc, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 from data_loader.FI2010 import *
+import pandas as pd
+
+
 
 dash.register_page(__name__, name='fi2010', path='/fi2010')
+
+###################################################################################################################
+# PARAMETERS AND LAYOUT
+###################################################################################################################
 
 parameters = html.Div([
     html.H4('Adjust Parameters: '),
@@ -86,7 +93,7 @@ results = html.Div([
 
     html.Hr(),
     html.Label('Mean bid ask spread by tick:'),
-    dcc.Graph(id='spread-line'),
+    html.Div(id='spread-line'),
 
 ], style={
     "marginLeft": "10vw",
@@ -97,6 +104,10 @@ layout = html.Div(
     [parameters, results],
     style={"display": "flex", "flexDirection": "row", "width": "100%"},
 )
+
+###################################################################################################################
+# CALLBACK FUNCTIONS
+###################################################################################################################
 
 @callback(
     Output('label-hist', 'figure'),
@@ -109,10 +120,10 @@ layout = html.Div(
 def get_label_histogram(stocks, days, norm):
     if None in locals().values():
         raise PreventUpdate
-    print(norm)
+
     stocks = [stocks] if isinstance(stocks, int) else list(stocks)
     days = list(range(days[0], days[1]+1))
-    print("a")
+
     label_hist = {
         k: Dataset_fi2010(
             auction=False,
@@ -125,12 +136,12 @@ def get_label_histogram(stocks, days, norm):
         ).labels_count
         for k, k_index in zip([1, 2, 3, 5, 10], [0, 1, 2, 3, 4])  # FI-2010 label indices
     }
-    print("b")
+
     first_k = next(iter(label_hist))
     label_types = label_hist[first_k].keys()
 
     fig = go.Figure()
-    print("c")
+
     for label in label_types:
         fig.add_trace(
             go.Bar(
@@ -149,3 +160,50 @@ def get_label_histogram(stocks, days, norm):
     )
 
     return fig
+
+@callback(
+    Output('spread-line', 'children'),
+    [
+        Input('stock-dropdown', 'value'),
+        Input('day-slider', 'value'),
+        Input('norm-method', 'value'),
+    ]
+)
+def intraday_spread(stocks, days, norm):
+    if None in locals().values():
+        raise PreventUpdate
+
+    stocks = [stocks] if isinstance(stocks, int) else list(stocks)
+    days = list(range(days[0], days[1]+1))
+
+    graphs = []
+    for stock in stocks:
+        spread_data = Dataset_fi2010(
+            auction=False,
+            normalization=norm,
+            stock_idx=[stock],
+            days=days,
+            T=1,
+            k=0,  # k is not used in spread calculation
+            lighten=True,
+        ).get_spread()
+
+        tick_time = np.arange(len(spread_data))
+        print(spread_data)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=tick_time,
+            y=spread_data,
+            mode='lines',
+            name=f'Stock {stock}'
+        ))
+        fig.update_layout(
+            title=f'Bid-Ask Spread for Stock {stock} by Tick',
+            xaxis_title='Tick',
+            yaxis_title='Spread',
+            legend_title='Stock'
+        )
+
+        graphs.append(dcc.Graph(figure=fig))
+    print("aaaaaaaaaaaaaaaaaa")
+    return graphs

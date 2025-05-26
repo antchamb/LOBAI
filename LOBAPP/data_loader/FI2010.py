@@ -173,6 +173,90 @@ class Dataset_fi2010:
 
         return {label_map[k]: v for k, v in zip(unique, counts)}
 
+    @staticmethod
+    def handling_level(level: int, T, lighten: bool = True):
+        if T != 1:
+            raise ValueError("`get_spread` requires T=1 for snapshot-level computation.")
+
+        if level < 1:
+            raise ValueError("Level must be at least 1.")
+
+        rows_per_level = 4
+        base = (level - 1) * rows_per_level
+        ask_row = base
+        bid_row = base + 2
+        max_level = 5 if lighten else 10
+        if level > max_level:
+            raise ValueError(f"Level must be at most {max_level}.")
+
+        return rows_per_level, base, ask_row, bid_row, max_level
+
+    def get_spread(self, level: int = 1, agg: str | None = "series"):
+        """
+            Computes the spread between the ask and bid prices for a stock at each update
+            Parameters
+            ----------
+            level : int
+                Order-book level (1 = top-of-book).
+                Valid range: 1-5 when `lighten=True`, 1-10 otherwise.
+            agg   : {"series", "mean", "median"} or None
+                * "series"  → numpy array of spreads (default)
+                * "mean"    → scalar mean spread
+                * "median"  → scalar median spread
+
+            Notes
+            -----
+            Even though the dataset is normalised (Z-score / Min-Max / DecPre),
+            the **difference** `ask − bid` still reflects the true shape of the
+            spread, because both prices are transformed with the *same* linear
+            mapping.
+        """
+
+        rows_per_level, base, ask_row, bid_row, max_level = self.handling_level(level, self.T, self.lighten)
+
+        # Compute spread for each snapshot
+        spreads = (self.x[:, 0, :, ask_row] - self.x[:, 0, :, bid_row]).squeeze()
+
+        if agg == "series":
+            return np.array(spreads)
+        elif agg == "mean":
+            return np.array(spreads.mean())
+        elif agg == "median":
+            return np.array(np.median(spreads, axis=0))
+        else:
+            raise ValueError("Invalid aggregation method. Use 'series', 'mean', or 'median'.")
+
+    def get_ofi(self, level: int = 1, agg: str | None = "series"):
+        """
+        Computes the order flow imbalance (OFI) for a stock at each update.
+        Parameters
+        ----------
+        level : int
+            Order-book level (1 = top-of-book).
+            Valid range: 1-5 when `lighten=True`, 1-10 otherwise.
+        agg   : {"series", "mean", "median"} or None
+            * "series"  → numpy array of OFI values (default)
+            * "mean"    → scalar mean OFI
+            * "median"  → scalar median OFI
+
+        Notes
+        -----
+        The OFI is computed as the difference between the total volume on the ask side and the total volume on the bid side.
+        """
+
+        rows_per_level, base, ask_row, bid_row, max_level = self.handling_level(level, self.T, self.lighten)
+
+        ofi = (self.x[:, 0, :, ask_row] - self.x[:, 0, :, bid_row]).squeeze()
+
+        if agg == "series":
+            return np.array(ofi)
+        elif agg == "mean":
+            return np.array(ofi.mean())
+        elif agg == "median":
+            return np.array(np.median(ofi, axis=0))
+        else:
+            raise ValueError("Invalid aggregation method. Use 'series', 'mean', or 'median'.")
+
 
 def __vis_sample_lob__():
     import matplotlib.pyplot as plt
