@@ -73,7 +73,7 @@ def __extract_stock__(raw_data, stock_idx):
     return split_data[stock_idx]
 
 
-def __split_x_y__(data, lighten):
+def __split_x_y__(data, lighten, rows=None):
     """
     Extract lob data and annotated label from fi-2010 data
     Parameters
@@ -83,11 +83,15 @@ def __split_x_y__(data, lighten):
     if lighten:
         data_length = 20
     else:
-        data_length = 40
+        data_length = 144
+
+    if rows is not None:
+        data_length = rows
 
     x = data[:data_length, :].T
     y = data[-5:, :].T
     return x, y
+
 
 
 def __data_processing__(x, y, T, k):
@@ -161,8 +165,19 @@ class Dataset_fi2010:
         """Generates samples of data"""
         return self.x[index], self.y[index]
 
-    def get_midprice(self):
-        return []
+    def _get_midprice(self) -> np.ndarray:
+        """
+        Returns a 1-D NumPy array of mid-prices (Ask₁ + Bid₁)/2
+        for every snapshot in the dataset.
+        Works both for lighten=True (20 rows) and full (40/144 rows).
+        """
+        ask_row = 0  # first row in each 4-row block
+        bid_row = 2  # third row in each 4-row block
+        mid = 0.5 * (
+                self.x[:, 0, :, ask_row].squeeze() +
+                self.x[:, 0, :, bid_row].squeeze()
+        )
+        return mid.astype(np.float64)
 
     def get_label(self):
         """Returns label counts as a dictionary: {'down': count, 'flat': count, 'up': count}"""
@@ -245,18 +260,68 @@ class Dataset_fi2010:
         """
 
         rows_per_level, base, ask_row, bid_row, max_level = self.handling_level(level, self.T, self.lighten)
+        print(self.x.squeeze().shape)
+        # Extract ask and bid depths
 
-        ofi = (self.x[:, 0, :, ask_row] - self.x[:, 0, :, bid_row]).squeeze()
+        ask_depth = self.x.squeeze()[:, ask_row]
+        bid_depth = self.x.squeeze()[:, bid_row]
 
-        if agg == "series":
-            return np.array(ofi)
-        elif agg == "mean":
-            return np.array(ofi.mean())
-        elif agg == "median":
-            return np.array(np.median(ofi, axis=0))
+        # Compute differences
+        d_ask = np.diff(ask_depth, axis=0, prepend=ask_depth[0:1])
+        d_bid = np.diff(bid_depth, axis=0, prepend=bid_depth[0:1])
+
+        # Compute OFI
+        ofi_series = d_bid - d_ask
+
+        return ofi_series
+        # elif agg == "mean":
+        #     return np.array(ofi_series.mean())
+        # elif agg == "median":
+        #     return np.array(np.median(ofi_series, axis=0))
+        # else:
+        #     raise ValueError("Invalid aggregation method. Use 'series', 'mean', or 'median'.")
+        #
+    def as_2d(self):
+        """
+        Returns the dataset as a 2D numpy array.
+        The first dimension is the sample index, and the second dimension is the feature index.
+        """
+        return self.x[:, 0, -1, :].cpu().numpy()
+
+    def get_volatility(self, horizon: int = 1, mode: str = "series"):
+        """
+        μ-free realised volatility of mid-price changes over `horizon`.
+
+        Parameters
+        ----------
+        horizon : int
+            Number of snapshots ahead. Usually in {1,2,3,5,10}.
+        mode : {"series","std","var"}
+            * "series": vector of absolute returns |Δpₜ|
+            * "std"   : scalar σ = √Var(Δpₜ)
+            * "var"   : scalar Var(Δpₜ)
+
+        Notes
+        -----
+        The dataset is normalised, but subtraction keeps the true
+        shape of price moves because the transform is affine.  Hence
+        σ(|Δp|) is meaningful.
+        """
+        if horizon < 1:
+            raise ValueError("Horizon must be at least 1.")
+
+        mp = self._get_midprice()
+
+        diff = mp[horizon:] - mp[:-horizon]
+
+        if mode == "series":
+            return np.abs(diff)
+        elif mode == "std":
+            return np.std(np.abs(diff))
+        elif mode == "var":
+            return np.var(np.abs(diff))
         else:
-            raise ValueError("Invalid aggregation method. Use 'series', 'mean', or 'median'.")
-
+            raise ValueError("Invalid mode. Use 'series', 'std', or 'var'.")
 
 def __vis_sample_lob__():
     import matplotlib.pyplot as plt

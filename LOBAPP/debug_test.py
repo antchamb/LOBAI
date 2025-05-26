@@ -1,43 +1,23 @@
-from data_loader.FI2010 import *
-import matplotlib.pyplot as plt
+# import numpy as np
+#
+# from data_loader.FI2010 import Dataset_fi2010
+#
+# stocks= [0]
+#
+# days = [1,2]
+# norm="Zscore"
+# graphs = []
+#
+# ds = Dataset_fi2010(
+#     auction=False,
+#     normalization=norm,
+#     stock_idx=stocks,
+#     days=days,
+#     T=1,
+#     k=0,  # k is not used in OFI calculation
+#     lighten=True,
+# )
+#
+# a, b, c =ds.get_ofi()
 
-# stocks = [0, 1, 2]
-days = [1, 2]
-norm="Zscore"
-# for stock in stocks:
-#     print(f"Stock {stock} data:")
-#     ds = Dataset_fi2010(
-#         auction=False,
-#         normalization=norm,
-#         stock_idx=[stock],
-#         days=days,
-#         T=1,
-#         k=0,
-#         lighten=True,
-#     )
-#     print(ds.get_spread())
-ds = Dataset_fi2010(
-        auction=False,
-        normalization=norm,
-        stock_idx=[0],
-        days=days,
-        T=1,
-        k=0,
-        lighten=True,
-)
-spread_data_one_day = ds.get_spread()
-tick_time = np.arange(len(spread_data_one_day))
-
-spdata = Dataset_fi2010(
-    auction=False,
-    normalization=norm,
-    stock_idx=[0],
-    days=[1],
-    T=1,
-    k=0,
-    lighten=True,
-).get_spread()
-tickt = np.arange(len(spdata))
-plt.plot(tick_time, spread_data_one_day, label='Stock 0')
-plt.show()
-plt.plot(tickt, spdata, label='Stock 0 Day 1')
+# tick_time = np.arange(len(ofi_series))

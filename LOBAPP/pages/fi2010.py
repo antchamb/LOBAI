@@ -92,9 +92,20 @@ results = html.Div([
     dcc.Graph(id='label-hist'),
 
     html.Hr(),
-    html.Label('Mean bid ask spread by tick:'),
+    html.Label('bid ask spread by tick:'),
     html.Div(id='spread-line'),
 
+    html.Hr(),
+    html.Label('Order Flow Imbalance by tick:'),
+    html.Div(id='ofi-line'),
+
+    html.Hr(),
+    html.Label('feature correlation heatmap:'),
+    dcc.Graph('corr-heat'),
+
+    html.Hr(),
+    html.Label('Volatility vs Horizon:'),
+    dcc.Graph(id='vol-hist')
 ], style={
     "marginLeft": "10vw",
     "width": "90vw"
@@ -189,7 +200,7 @@ def intraday_spread(stocks, days, norm):
         ).get_spread()
 
         tick_time = np.arange(len(spread_data))
-        print(spread_data)
+
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=tick_time,
@@ -205,5 +216,137 @@ def intraday_spread(stocks, days, norm):
         )
 
         graphs.append(dcc.Graph(figure=fig))
-    print("aaaaaaaaaaaaaaaaaa")
+
     return graphs
+
+
+@callback(
+    Output('ofi-line', 'children'),
+    [
+        Input('stock-dropdown', 'value'),
+        Input('day-slider', 'value'),
+        Input('norm-method', 'value'),
+    ]
+)
+def get_ofi_graphs(stocks, days, norm):
+    if None in locals().values():
+        raise PreventUpdate
+
+    stocks = [stocks] if isinstance(stocks, int) else list(stocks)
+    days = list(range(days[0], days[1]+1))
+
+    graphs = []
+    for stock in stocks:
+        ofi_data = Dataset_fi2010(
+            auction=False,
+            normalization=norm,
+            stock_idx=[stock],
+            days=days,
+            T=1,
+            k=0,  # k is not used in OFI calculation
+            lighten=True,
+        ).get_ofi()
+
+        tick_time = np.arange(len(ofi_data))
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=tick_time,
+            y=ofi_data,
+            mode='lines',
+            name=f'Stock {stock}'
+        ))
+        fig.update_layout(
+            title=f'Order Flow Imbalance for Stock {stock} by Tick',
+            xaxis_title='Tick',
+            yaxis_title='Order Flow Imbalance',
+            legend_title='Stock'
+        )
+
+        graphs.append(dcc.Graph(figure=fig))
+
+    return graphs
+
+@callback(
+    Output('corr-heat', 'figure'),
+    [
+        Input('stock-dropdown', 'value'),
+        Input('day-slider',    'value'),
+        Input('norm-method',   'value')
+    ]
+)
+def draw_feature_heat(stocks, days, norm):
+    if None in locals().values():
+        raise PreventUpdate
+
+    stocks = [stocks] if isinstance(stocks, int) else list(stocks)
+    days = list(range(days[0], days[1]+1))
+
+    ds = Dataset_fi2010(
+        auction=False,
+        normalization=norm,
+        stock_idx=stocks,
+        days=days,
+        T=1,
+        k=0,
+        lighten=True,
+    )
+
+    X = ds.as_2d()
+    corr = np.corrcoef(X, rowvar=False)
+    fig = go.Figure(
+        go.Heatmap(
+            z=corr,
+            colorscale='RdBu',
+            zmin=-1, zmax=1,
+            colorbar=dict(title='ρ')
+        )
+    )
+    fig.update_layout(
+        title=f'Feature Correlation (stocks = {len(stocks)}, days={days})',
+        xaxis_title='Features',
+        yaxis_title='Features'
+    )
+
+    return fig
+
+@callback(
+    Output('vol-hist', 'figure'),
+    [
+        Input('stock-dropdown', 'value'),
+        Input('day-slider', 'value'),
+        Input('norm-method', 'value'),
+        Input('k', 'value')
+    ]
+)
+def volatility_horizon(stocks, days, norm, k):
+    if None in locals().values():
+        raise PreventUpdate
+
+    stocks = [stocks] if isinstance(stocks, int) else list(stocks)
+    days = list(range(days[0], days[1]+1))
+
+    vols = []
+    for s in stocks:
+        vol_data = Dataset_fi2010(
+            auction=False,
+            normalization=norm,
+            stock_idx=[s],
+            days=days,
+            T=1,
+            k=k,  # k is used for volatility calculation
+            lighten=True,
+        ).get_volatility(horizon=k)
+
+        vols.append(vol_data)
+
+    fig = go.Figure(go.Bar(
+        x=[f'Stock {stock}' for stock in stocks],
+        y=vols, name=f"σ(k={k})"
+    ))
+    fig.update_layout(
+        title=f"Realised volatility vs stock (k={k} snapshots)",
+        xaxis_title="Stock", yaxis_title="σ",
+        template="plotly_white"
+    )
+    return fig
