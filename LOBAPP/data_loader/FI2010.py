@@ -2,6 +2,8 @@ import os
 import numpy as np
 import torch
 from lean.models import file_path
+from tqdm import tqdm
+from matplotlib.rcsetup import validate_backend
 
 
 def __get_raw__(auction, normalization, day):
@@ -261,26 +263,45 @@ class Dataset_fi2010:
 
         rows_per_level, base, ask_row, bid_row, max_level = self.handling_level(level, self.T, self.lighten)
         print(self.x.squeeze().shape)
-        # Extract ask and bid depths
 
-        ask_depth = self.x.squeeze()[:, ask_row]
-        bid_depth = self.x.squeeze()[:, bid_row]
+        snap = self.x[:, 0, 0, :].cpu().numpy()
 
-        # Compute differences
-        d_ask = np.diff(ask_depth, axis=0, prepend=ask_depth[0:1])
-        d_bid = np.diff(bid_depth, axis=0, prepend=bid_depth[0:1])
+        n = snap.shape[0]
+        ofi = np.zeros(n, dtype=np.float64)
 
-        # Compute OFI
-        ofi_series = d_bid - d_ask
+        lvl_list = list(range(1, max_level + 1))
 
-        return ofi_series
-        # elif agg == "mean":
-        #     return np.array(ofi_series.mean())
-        # elif agg == "median":
-        #     return np.array(np.median(ofi_series, axis=0))
-        # else:
-        #     raise ValueError("Invalid aggregation method. Use 'series', 'mean', or 'median'.")
-        #
+        for lvl in tqdm(lvl_list):
+            base = 4 * (lvl - 1)
+            pa = snap[:, base]
+            va = snap[:, base + 1]
+            pb = snap[:, base + 2]
+            vb = snap[:, base + 3]
+
+            # bid order flow
+            bOF = np.zeros_like(pb)
+            diff_b = pb[1:] - pb[:-1]
+            mask_up = diff_b > 0
+            mask_same = diff_b == 0
+            mask_down = diff_b < 0
+            bOF[1:][mask_up] = vb[1:][mask_up]
+            bOF[1:][mask_same] = vb[1:][mask_same] - vb[:-1][mask_same]
+            bOF[1:][mask_down] = -vb[1:][mask_down]
+
+            # ask order flow
+            aOF = np.zeros_like(pa)
+            diff_a = pa[1:] - pa[:-1]
+            mask_up = diff_a > 0
+            mask_same = diff_a == 0
+            mask_down = diff_a < 0
+            aOF[1:][mask_up] = -va[:-1][mask_up]
+            aOF[1:][mask_same] = va[1:][mask_same] - va[:-1][mask_same]
+            aOF[1:][mask_down] = va[1:][mask_down]
+
+        ofi += bOF + aOF
+
+        return ofi
+
     def as_2d(self):
         """
         Returns the dataset as a 2D numpy array.

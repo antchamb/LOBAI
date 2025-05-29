@@ -3,6 +3,8 @@ from models.deeplob import Deeplob
 from pathlib import Path
 from data_loader.FI2010 import Dataset_fi2010
 import random
+import tqdm as tqdm
+import time
 
 CKPT = Path(__file__).resolve().parents[1] / "weights" / "deeplob_light.pt"
 
@@ -61,18 +63,28 @@ ds = Dataset_fi2010(
     k=0,
     lighten=True,
 )
-loader = torch.utils.data.DataLoader(ds, batch_size=1024)
+loader = torch.utils.data.DataLoader(ds, batch_size=1)
+
+
+timing = []
 all_pred, all_true =  [], []
 with torch.no_grad():
     for xb, yb in loader:
         xb, yb = xb.to(device), yb.to(device)
+        torch.cuda.empty_cache()
+        start = time.time()
+        net(xb.to(device))
+        torch.cuda.synchronize()
+        timing.append(time.time() - start)
         probs =  net(xb).argmax(1)
         all_pred.append(probs.cpu())
         all_true.append(yb.cpu())
 
 y_pred = torch.cat(all_pred).numpy()
 y_true = torch.cat(all_true).numpy()
+timing = torch.as_tensor(timing, dtype=torch.float32)
 
+print(round(timing.mean().item(), 4), 'ms/data')
 # Classification report
 print(classification_report(y_true, y_pred, target_names=["down", "flat", "up"]))
 

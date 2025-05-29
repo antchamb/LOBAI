@@ -1,0 +1,9 @@
+performance analysis:
+
+--> model existant
+--> implémente + training
+--> évalue: précision, F1 score, AUC.
+--> torch: how to measure time in pytorch (url)
+--> temps d'exécution: model(input): torch.cuda.synchronize
+--> compute torough de algm-segmenter/segm/speed_test.
+--> gpu nécessite la queue, inférence en temps constant: entré de même taille donc pas censé avoir un temps variable
