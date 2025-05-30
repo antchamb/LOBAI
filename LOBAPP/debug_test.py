@@ -1,23 +1,22 @@
-import numpy as np
+from data_loader.FI2010 import *
+import torch
 
-from data_loader.FI2010 import Dataset_fi2010
-
-stocks= [0]
-
-days = [1,2]
-norm="Zscore"
-graphs = []
+ofi_ds = OFIDataset(
+    auction=False, normalization="Zscore",
+    stock_idx=[0,1,2,3,4],
+    days=[1],
+    T=100,    # look-back
+    k=2,      # prediction horizon
+    lighten=False,
+)
+loader = torch.utils.data.DataLoader(ofi_ds, batch_size=64, shuffle=True)
 
 ds = Dataset_fi2010(
-    auction=False,
-    normalization=norm,
-    stock_idx=stocks,
-    days=days,
-    T=1,
-    k=0,  # k is not used in OFI calculation
-    lighten=True,
+    auction=False, normalization="Zscore",
+    stock_idx=[0,1,2,3,4],
+    days=[1],
+    T=100,    # look-back
+    k=2,      # prediction horizon
+    lighten=False,
 )
-
-ofi =ds.get_ofi()
-
-# tick_time = np.arange(len(ofi_series))
+load = torch.utils.data.DataLoader(ds, batch_size=64, shuffle=True)

@@ -85,7 +85,7 @@ def __split_x_y__(data, lighten, rows=None):
     if lighten:
         data_length = 20
     else:
-        data_length = 144
+        data_length = 40
 
     if rows is not None:
         data_length = rows
@@ -372,3 +372,66 @@ def __vis_sample_lob__():
     plt.show()
 
 fi2010 = Dataset_fi2010(auction=False, normalization="Zscore", stock_idx=[0, 1, 2, 3, 4], days=[1], T = 10, k=2, lighten=True)
+
+class OFIDataset(Dataset_fi2010):
+    """
+    Same constructor as Dataset_fi2010 but:
+    --> force T>=2 (for OFI)
+    --> x now contains OFI instead of raw LOB rows
+    """
+    def __init__(self, *args, levels=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.T < 2:
+            raise ValueError("T must be at least 2 for OFI calculation.")
+        self.levels = self._parse_levels(levels)
+        self._build_ofi_tensor()
+
+    def _parse_levels(self, levels):
+        max_lvl = 5 if self.lighten else 10
+        if levels is None:
+            return list(range(1, max_lvl + 1))
+        if isinstance(levels, int):
+            levels = [levels]
+        if not all(1 <= l <= max_lvl for l in levels):
+            raise ValueError(f"Levels must be within 1–{max_lvl}.")
+        return sorted(levels)
+
+    def _build_ofi_tensor(self):
+        """Replace self.x with OFI-based windows"""
+        snap = self.x.squeeze(1)  # Remove the singleton dimension
+        snap = snap.cpu().numpy()
+
+        N, D, _ = snap.shape  # Extract dimensions
+        n_lvls = len(self.levels)
+        ofi_all = np.zeros((N, n_lvls), dtype=np.float32)
+
+        for j, lvl in enumerate(self.levels):
+            base = 4 * (lvl - 1)
+            pa, va = snap[:, :, base], snap[:, :, base + 1]
+            pb, vb = snap[:, :, base + 2], snap[:, :, base + 3]
+
+            # Initialize aOF and bOF with the correct shape
+            aOF = np.zeros((N, D), dtype=np.float32)
+            bOF = np.zeros((N, D), dtype=np.float32)
+
+            # Ask order flow
+            d_pa = pa[1:] - pa[:-1]
+            aOF[1:] = np.where(d_pa > 0, -va[:-1], aOF[1:])
+            aOF[1:] = np.where(d_pa == 0, va[1:] - va[:-1], aOF[1:])
+            aOF[1:] = np.where(d_pa < 0, va[1:], aOF[1:])
+
+            # Bid order flow
+            d_pb = pb[1:] - pb[:-1]
+            bOF[1:] = np.where(d_pb > 0, vb[1:], bOF[1:])
+            bOF[1:] = np.where(d_pb == 0, vb[1:] - vb[:-1], bOF[1:])
+            bOF[1:] = np.where(d_pb < 0, -vb[:-1], bOF[1:])
+
+            ofi_all[:, j] = aOF.sum(axis=1) + bOF.sum(axis=1)
+
+        N_w = N - self.T + 1
+        ofi_w = np.zeros((N_w, self.T, n_lvls), dtype=np.float32)
+        for i in range(self.T, N + 1):
+            ofi_w[i - self.T] = ofi_all[i - self.T:i, :]
+
+        self.x = torch.from_numpy(ofi_w).unsqueeze(1)
+        self.length = self.x.shape[0]

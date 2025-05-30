@@ -37,10 +37,12 @@ class Deeplob(nn.Module):
         if lighten:
             conv3_kernel_size = 5
         else:
-            conv3_kernel_size = 10
+            # conv3_kernel_size = 10
+            conv3_kernel_size = 5
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(1, conv3_kernel_size)),
+            # nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(1, conv3_kernel_size)),
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(1, 3), padding=(0, 1)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.BatchNorm2d(32),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(4, 1)),
@@ -79,54 +81,7 @@ class Deeplob(nn.Module):
         self.lstm = nn.LSTM(input_size=192, hidden_size=64, num_layers=1, batch_first=True)
         self.fc1 = nn.Linear(64, 3)
 
-    # def forward(self, x):
-    #     batch_size = x.size(0)
-    #     h0 = torch.zeros(1, batch_size, 64, device=x.device)
-    #     c0 = torch.zeros(1, batch_size, 64, device=x.device)
-    #
-    #     x = self.conv1(x)
-    #     x = self.conv2(x)
-    #     x = self.conv3(x)
-    #
-    #     x_inp1 = self.inp1(x)
-    #     x_inp2 = self.inp2(x)
-    #     x_inp3 = self.inp3(x)
-    #
-    #     x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
-    #
-    #     x = x.permute(0, 2, 1, 3)
-    #     x = torch.reshape(x, (-1, x.shape[1], x.shape[2]))
-    #
-    #     x, _ = self.lstm(x, (h0, c0))
-    #     x = x[:, -1, :]
-    #     x = self.fc1(x)
-    #     forecast_y = torch.softmax(x, dim=1)
-    #
-    #     return forecast_y
-    # def forward(self, x):
-    #     batch_size = x.size(0)
-    #     h0 = torch.zeros(1, batch_size, 64, device=x.device)
-    #     c0 = torch.zeros(1, batch_size, 64, device=x.device)
-    #
-    #     x = self.conv1(x)
-    #     x = self.conv2(x)
-    #     x = self.conv3(x)
-    #
-    #     x_inp1 = self.inp1(x)
-    #     x_inp2 = self.inp2(x)
-    #     x_inp3 = self.inp3(x)
-    #
-    #     x = torch.cat((x_inp1, x_inp2, x_inp3), dim=1)
-    #
-    #     x = x.permute(0, 2, 1, 3)
-    #     x = torch.reshape(x, (batch_size, x.shape[1], -1))
-    #
-    #     x, _ = self.lstm(x, (h0, c0))
-    #     x = x[:, -1, :]
-    #     x = self.fc1(x)
-    #     forecast_y = torch.softmax(x, dim=1)
-    #
-    #     return forecast_y
+
 
     def forward(self, x):
         # print(f"Input shape: {x.shape}")  # Initial input shape

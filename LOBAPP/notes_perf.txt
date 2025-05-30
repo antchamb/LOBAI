@@ -7,3 +7,28 @@ performance analysis:
 --> temps d'exécution: model(input): torch.cuda.synchronize
 --> compute torough de algm-segmenter/segm/speed_test.
 --> gpu nécessite la queue, inférence en temps constant: entré de même taille donc pas censé avoir un temps variable
+
+
+TRANSLOB:
+--> CNN + Layer Norm 
+--> position encoding = temporal encoding.
+--> 2 block d'attention causaux
+--> 1 classifier MLP
+
+
+--> input go in CNN dilated
+--> DilatedLOB 5 couches conv dilaté 1D
+--> pas sur ici sur cette partie(1, 2, 4, 8, 16 pour le taux de dilatation)
+--> pour implémenter la convolution 1D dilaté il faut aussi du padding (kernel_size - 1) : à vérifier
+input shape (100, 40) puis (100, 14), (100, 14), (100, 14)
+jouer avec les hyper param pour le passage de 40 à 14, voir chat pour hyperparam.
+à chaque vecteur (100) on rajoute un temporal encoding. cela va encoder le temps passé. cela ajoute une composante temps. vérifier ou est distribuer l'impact en printant le vecteur. + 1 feature.
+
+--> passage en (100, 15) puis on va rentrer dans les blocks d'attention.
+--> rentrer les tokens dans les blocks d'attention sont causaux = les temps nouveaux ne peuvent communiquer qu'avec les temps anciens.
+--> y a que le futur qui voit e passé.
+--> dim ne change pas
+--> flatten la sortie des transformer: 100 vecteur de 15 features en 1 vecteur de 1500.
+--> regarder les cartes d'attentions pour voir ou l'attention a été appris.
+--> in forward block attention. u lieu de return features return atentio card.
+

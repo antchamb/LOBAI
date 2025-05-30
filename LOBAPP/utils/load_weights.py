@@ -6,7 +6,7 @@ import random
 import tqdm as tqdm
 import time
 
-CKPT = Path(__file__).resolve().parents[1] / "weights" / "deeplob_light.pt"
+CKPT = Path(__file__).resolve().parents[1] / "weights" / "ofi_epoch_70.pt"
 
 
 def load_deeplob(device="cuda" if torch.cuda.is_available() else "cpu"):
@@ -34,31 +34,31 @@ import seaborn as sns, matplotlib.pyplot as plt
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 net = load_deeplob(device="cpu")
-print(summary(net, input_size=(1, 1, 20, 40)))  # (B,C,T,D)
+# print(summary(net, input_size=(1, 1, 20, 40)))  # (B,C,T,D)
 
-conv_blocks = [net.conv1, net.conv2, net.conv3, net.inp1, net.inp2, net.inp3]
+# conv_blocks = [net.conv1, net.conv2, net.conv3, net.inp1, net.inp2, net.inp3]
 
-for i, block in enumerate(conv_blocks, start=1):
-    # Check if the first layer in the block has weights
-    if hasattr(block[0], "weight"):
-        weights = block[0].weight.detach().cpu().flatten().numpy()
-        fig = px.histogram(weights, nbins=100, title=f"Conv Block {i} Weight Distribution")
-        fig.show()
+# for i, block in enumerate(conv_blocks, start=1):
+#     # Check if the first layer in the block has weights
+#     if hasattr(block[0], "weight"):
+#         weights = block[0].weight.detach().cpu().flatten().numpy()
+#         fig = px.histogram(weights, nbins=100, title=f"Conv Block {i} Weight Distribution")
+#         fig.show()
 
 # Plot weight distributions for LSTM layer
-lstm_weights_ih = net.lstm.weight_ih_l0.detach().cpu().flatten().numpy()
-fig_ih = px.histogram(lstm_weights_ih, nbins=100, title="LSTM Input-Hidden Weight Distribution")
-fig_ih.show()
+# lstm_weights_ih = net.lstm.weight_ih_l0.detach().cpu().flatten().numpy()
+# fig_ih = px.histogram(lstm_weights_ih, nbins=100, title="LSTM Input-Hidden Weight Distribution")
+# fig_ih.show()
 
-lstm_weights_hh = net.lstm.weight_hh_l0.detach().cpu().flatten().numpy()
-fig_hh = px.histogram(lstm_weights_hh, nbins=100, title="LSTM Hidden-Hidden Weight Distribution")
-fig_hh.show()
+# lstm_weights_hh = net.lstm.weight_hh_l0.detach().cpu().flatten().numpy()
+# fig_hh = px.histogram(lstm_weights_hh, nbins=100, title="LSTM Hidden-Hidden Weight Distribution")
+# fig_hh.show()
 
 ds = Dataset_fi2010(
     auction=False,
     normalization="Zscore",
     stock_idx=[0, 1, 2, 3, 4],  # all five stocks
-    days=[2],  # day 1 = training set; 2-10 = test sets
+    days=[1,2,3,4,5,6,7],  # day 1 = training set; 2-10 = test sets
     T=20,
     k=0,
     lighten=True,
