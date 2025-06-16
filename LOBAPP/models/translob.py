@@ -4,13 +4,6 @@ import torch.nn.functional as F
 from timm.layers import trunc_normal_, DropPath
 
 
-def _assert_shape(tensor, expected_tail, name):
-    """Utility to chech tensor shape (excluding batch dimension)."""
-    if tuple(tensor.shape[1:]) != expected_tail:
-        raise RuntimeError(
-            f"{name}: expected shape (_, {', '.join(map(str, expected_tail))}), but got {tuple(tensor.shape)} "
-        )
-
 class TransLOB(nn.Module):
     """One-stop implementation of TransLOB model (Wallbridge, 2020)."""
     def __init__(
