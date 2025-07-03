@@ -104,7 +104,7 @@ class TransLOB(nn.Module):
 
         # 4. Classification
         logits = self.classifier(x.flatten(1))
-        return F.softmax(logits, dim=-1)
+        return logits
 
 torch.manual_seed(0)
 model = TransLOB()

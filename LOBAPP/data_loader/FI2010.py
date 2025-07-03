@@ -279,22 +279,22 @@ class Dataset_fi2010:
             vb = snap[:, base + 3]
 
             # bid order flow
-            bOF = np.zeros_like(pb)
-            diff_b = pb[1:] - pb[:-1]
-            mask_up = diff_b > 0
+            bOF                = np.zeros_like(pb)
+            diff_b             = pb[1:] - pb[:-1]
+            mask_up = diff_b   > 0
             mask_same = diff_b == 0
             mask_down = diff_b < 0
-            bOF[1:][mask_up] = vb[1:][mask_up]
+            bOF[1:][mask_up]   = vb[1:][mask_up]
             bOF[1:][mask_same] = vb[1:][mask_same] - vb[:-1][mask_same]
             bOF[1:][mask_down] = -vb[1:][mask_down]
 
             # ask order flow
-            aOF = np.zeros_like(pa)
-            diff_a = pa[1:] - pa[:-1]
-            mask_up = diff_a > 0
+            aOF                = np.zeros_like(pa)
+            diff_a             = pa[1:] - pa[:-1]
+            mask_up = diff_a   > 0
             mask_same = diff_a == 0
             mask_down = diff_a < 0
-            aOF[1:][mask_up] = -va[:-1][mask_up]
+            aOF[1:][mask_up]   = -va[:-1][mask_up]
             aOF[1:][mask_same] = va[1:][mask_same] - va[:-1][mask_same]
             aOF[1:][mask_down] = va[1:][mask_down]
 
@@ -402,7 +402,7 @@ class OFIDataset(Dataset_fi2010):
         snap = snap.cpu().numpy()
 
         N, D, _ = snap.shape  # Extract dimensions
-        n_lvls = len(self.levels)
+        n_lvls  = len(self.levels)
         ofi_all = np.zeros((N, n_lvls), dtype=np.float32)
 
         for j, lvl in enumerate(self.levels):
@@ -435,3 +435,8 @@ class OFIDataset(Dataset_fi2010):
 
         self.x = torch.from_numpy(ofi_w).unsqueeze(1)
         self.length = self.x.shape[0]
+
+
+data = Dataset_fi2010(
+    auction=False, normalization="Zscore", stock_idx=[0, 1, 2, 3, 4], days=[1], T=10, k=[0,1, 2, 3, 4], lighten=True
+).__init_dataset__()

@@ -7,7 +7,7 @@ from data_loader.FI2010 import Dataset_fi2010
 from models.translob import TransLOB
 
 
-CKPT =  Path(__file__).resolve().parents[1] / "weights" / "trans_lob_test.pt"
+CKPT =  Path(__file__).resolve().parents[1] / "weights" / "translob_test_10.pt"
 
 # load model
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -22,7 +22,7 @@ test_set = Dataset_fi2010(
     stock_idx=[0, 1, 2, 3, 4],   # all five stocks
     days=[8,9,10], # last 3 days
     T=100,
-    k=2,
+    k=4,
     lighten=False,
 )
 test_loader = DataLoader(test_set, batch_size=32, shuffle=False)
@@ -31,7 +31,7 @@ test_loader = DataLoader(test_set, batch_size=32, shuffle=False)
 all_preds, all_labels = [], []
 with torch.no_grad():
     for xb, yb in test_loader:
-        xb, yb = xb.to(device), yb.to(device)
+        xb, yb = xb.to(device).squeeze(1), yb.to(device)
         preds = model(xb).argmax(dim=1)
         all_preds.append(preds.cpu())
         all_labels.append(yb.cpu())
